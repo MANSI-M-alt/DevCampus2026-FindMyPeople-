@@ -1,0 +1,6 @@
+{
+  "name": "FindMyPeople | Student & PhD Collaborator Discovery",
+  "description": "Find your people across departments to build projects and research together based on complementary skills, goals, and availability.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
