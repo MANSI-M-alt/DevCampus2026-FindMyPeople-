@@ -1,29 +1,23 @@
 import React from 'react';
-import { StudentProfile } from '../types';
-import { User, Users, Plus, Sparkles, Layers, ChevronDown, GraduationCap } from 'lucide-react';
+import { Users, Plus, GraduationCap, LogOut } from 'lucide-react';
 
 export type NavTab = 'projects' | 'phd' | 'post-project' | 'profile' | 'spark';
 
 interface HeaderNavProps {
   activeTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
-  profiles: StudentProfile[];
-  activeUserId: string;
-  onSelectActiveUser: (userId: string) => void;
   mutualCount: number;
+  email: string;
+  onSignOut: () => void;
 }
 
 export const HeaderNav: React.FC<HeaderNavProps> = ({
   activeTab,
   onSelectTab,
-  profiles,
-  activeUserId,
-  onSelectActiveUser,
   mutualCount,
+  email,
+  onSignOut,
 }) => {
-  const activeUser = profiles.find((p) => p.id === activeUserId) || profiles[0];
-  const isPhdActive = activeUser.isPhdCandidate || activeUser.year === 'PhD';
-
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -102,62 +96,19 @@ export const HeaderNav: React.FC<HeaderNavProps> = ({
             </button>
           </nav>
 
-          {/* Right: Active User Perspective Pill & Upload Button */}
+          {/* Right: Account and Upload */}
           <div className="flex items-center gap-3 shrink-0">
-            {/* Perspective Selector Dropdown */}
-            <div className="relative group">
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-xs font-mono cursor-pointer hover:bg-slate-100 transition">
-                <div className="text-left">
-                  <div className="flex items-center gap-1">
-                    <span className="text-[9px] text-slate-400 block font-bold uppercase leading-tight">VIEWING AS</span>
-                    {isPhdActive && (
-                      <span className="text-[9px] px-1 bg-purple-100 text-purple-900 rounded font-bold">PhD</span>
-                    )}
-                  </div>
-                  <span className="font-bold text-[#1E2A38] block leading-tight">{activeUser.name.split(' ')[0]}</span>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 ml-1" />
-              </div>
-
-              {/* Dropdown Menu */}
-              <div className="absolute right-0 mt-1 w-72 bg-white border border-slate-200 rounded-2xl shadow-xl p-2 hidden group-hover:block z-50 animate-in fade-in duration-150 font-mono">
-                <div className="text-[10px] text-slate-400 font-bold px-3 py-1.5 uppercase border-b border-slate-100 flex items-center justify-between">
-                  <span>SELECT PERSPECTIVE ({profiles.length})</span>
-                  <span className="text-purple-900">INCL. PHD SCHOLARS</span>
-                </div>
-                <div className="max-h-72 overflow-y-auto space-y-0.5 pt-1">
-                  {profiles.map((p) => {
-                    const pIsPhd = p.isPhdCandidate || p.year === 'PhD';
-                    return (
-                      <button
-                        key={p.id}
-                        onClick={() => onSelectActiveUser(p.id)}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-xs flex items-center justify-between transition cursor-pointer ${
-                          p.id === activeUserId
-                            ? 'bg-[#1E2A38] text-white font-bold'
-                            : 'hover:bg-slate-100 text-slate-700'
-                        }`}
-                      >
-                        <div>
-                          <div className="font-bold flex items-center gap-1.5">
-                            <span>{p.name}</span>
-                            {pIsPhd && (
-                              <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${p.id === activeUserId ? 'bg-purple-900 text-white' : 'bg-purple-100 text-purple-900'}`}>
-                                PhD
-                              </span>
-                            )}
-                          </div>
-                          <div className={`text-[10px] ${p.id === activeUserId ? 'text-slate-300' : 'text-slate-400'}`}>
-                            {p.department.split(' ')[0]} · {p.year}
-                          </div>
-                        </div>
-                        {p.id === activeUserId && <span className="text-[10px] font-bold">Active</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+            <div className="hidden sm:block max-w-48 truncate text-xs text-slate-500" title={email}>
+              {email}
             </div>
+            <button
+              onClick={onSignOut}
+              className="rounded-xl border border-slate-200 p-2 text-slate-600 transition hover:bg-slate-100"
+              aria-label="Sign out"
+              title="Sign out"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
 
             {/* Upload Button */}
             <button

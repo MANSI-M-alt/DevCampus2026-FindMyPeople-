@@ -5,7 +5,7 @@ import { Check, Plus, X, User, Calendar, Sparkles, FolderGit2, ExternalLink, Tra
 
 interface ProfileViewProps {
   currentProfile: StudentProfile;
-  onSaveProfile: (updated: StudentProfile) => void;
+  onSaveProfile: (updated: StudentProfile) => Promise<void>;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({ currentProfile, onSaveProfile }) => {
@@ -13,6 +13,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ currentProfile, onSave
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState<StudentProfile>({ ...currentProfile });
   const [newSkill, setNewSkill] = useState('');
@@ -139,11 +141,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ currentProfile, onSave
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSaveProfile(formData);
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await onSaveProfile(formData);
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Could not save your profile.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const goalOptions: { value: Goal; label: string; desc: string }[] = [
@@ -652,6 +662,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ currentProfile, onSave
 
         {/* Save Footer */}
         <div className="flex items-center justify-end gap-3 font-mono">
+          {saveError && <span role="alert" className="text-xs text-rose-700">{saveError}</span>}
           {savedSuccess && (
             <span className="text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200">
               Saved!
@@ -659,9 +670,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ currentProfile, onSave
           )}
           <button
             type="submit"
-            className="px-6 py-2.5 rounded-xl bg-[#1E2A38] text-white text-xs font-bold transition hover:bg-slate-800 cursor-pointer shadow-xs"
+            disabled={isSaving}
+            className="px-6 py-2.5 rounded-xl bg-[#1E2A38] text-white text-xs font-bold transition hover:bg-slate-800 cursor-pointer shadow-xs disabled:opacity-60"
           >
-            SAVE PROFILE
+            {isSaving ? 'SAVING…' : 'SAVE PROFILE'}
           </button>
         </div>
       </form>

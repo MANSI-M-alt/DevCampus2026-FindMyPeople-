@@ -1,22 +1,16 @@
 import React, { useState } from 'react';
-import { StudentProfile, Project, MatchResult } from '../types';
+import { StudentProfile, Project } from '../types';
 import { Sparkles, Search, Filter, BookOpen, GraduationCap, ExternalLink, Plus, Send, CheckCircle2, ArrowRight, X } from 'lucide-react';
 
 interface PhdScholarsViewProps {
   profiles: StudentProfile[];
   activeUserId: string;
-  onSelectActiveUser: (userId: string) => void;
-  onToggleInterested: (matchId: string, isAuthorAction: boolean) => void;
-  onSelectSparkSession: (match: MatchResult) => void;
-  onPostResearchRequirement: (newProject: Project) => void;
+  onPostResearchRequirement: (newProject: Project) => Promise<void>;
 }
 
 export const PhdScholarsView: React.FC<PhdScholarsViewProps> = ({
   profiles,
   activeUserId,
-  onSelectActiveUser,
-  onToggleInterested,
-  onSelectSparkSession,
   onPostResearchRequirement,
 }) => {
   const activeUser = profiles.find((p) => p.id === activeUserId) || profiles[0];
@@ -36,6 +30,7 @@ export const PhdScholarsView: React.FC<PhdScholarsViewProps> = ({
   const [reqTitle, setReqTitle] = useState('');
   const [reqDesc, setReqDesc] = useState('');
   const [reqRoles, setReqRoles] = useState('');
+  const [researchPostError, setResearchPostError] = useState<string | null>(null);
 
   // Propose Research Collaboration Modal
   const [proposeTargetScholar, setProposeTargetScholar] = useState<StudentProfile | null>(null);
@@ -120,9 +115,10 @@ export const PhdScholarsView: React.FC<PhdScholarsViewProps> = ({
     }
   };
 
-  const handleCreateResearchReq = (e: React.FormEvent) => {
+  const handleCreateResearchReq = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reqTitle.trim() || !reqDesc.trim()) return;
+    setResearchPostError(null);
 
     const newProj: Project = {
       id: `phd-req-${Date.now()}`,
@@ -134,11 +130,15 @@ export const PhdScholarsView: React.FC<PhdScholarsViewProps> = ({
       createdAt: new Date().toISOString(),
     };
 
-    onPostResearchRequirement(newProj);
-    setShowRequirementModal(false);
-    setReqTitle('');
-    setReqDesc('');
-    setReqRoles('');
+    try {
+      await onPostResearchRequirement(newProj);
+      setShowRequirementModal(false);
+      setReqTitle('');
+      setReqDesc('');
+      setReqRoles('');
+    } catch (error) {
+      setResearchPostError(error instanceof Error ? error.message : 'Could not publish the research requirement.');
+    }
   };
 
   // Propose Collaboration Handler
@@ -375,12 +375,6 @@ export const PhdScholarsView: React.FC<PhdScholarsViewProps> = ({
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => onSelectActiveUser(scholar.id)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-[#1E2A38] font-mono text-[10px] font-bold transition cursor-pointer"
-                    >
-                      View Profile
-                    </button>
                   </div>
 
                   {/* Research Specialization & Lab if PhD */}
@@ -574,6 +568,7 @@ export const PhdScholarsView: React.FC<PhdScholarsViewProps> = ({
             </div>
 
             <form onSubmit={handleCreateResearchReq} className="space-y-3 text-xs">
+              {researchPostError && <p role="alert" className="rounded-lg bg-rose-50 p-3 text-rose-700">{researchPostError}</p>}
               <div>
                 <label className="block text-slate-500 text-[10px] uppercase font-bold mb-1">
                   Research Title / Topic *

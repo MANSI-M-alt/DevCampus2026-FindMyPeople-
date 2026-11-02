@@ -14,7 +14,6 @@ interface ProjectCollaboratorListProps {
   matchError: string | null;
   onRefreshMatches: () => void;
   onToggleInterested: (matchId: string, isAuthor: boolean) => void;
-  onSelectActiveUser: (userId: string) => void;
   onSelectSparkSession: (match: MatchResult) => void;
 }
 
@@ -29,7 +28,6 @@ export const ProjectCollaboratorList: React.FC<ProjectCollaboratorListProps> = (
   matchError,
   onRefreshMatches,
   onToggleInterested,
-  onSelectActiveUser,
   onSelectSparkSession,
 }) => {
   const authorProfile = profiles.find((p) => p.id === project.authorId);
@@ -528,8 +526,8 @@ export const ProjectCollaboratorList: React.FC<ProjectCollaboratorListProps> = (
                         onToggleInterested(match.id, false);
                         triggerToast(
                           !hasCandidateExpressed
-                            ? `Accepted proposal for ${project.title}!`
-                            : `Undid proposal acceptance.`
+                            ? `Interest recorded for ${project.title}!`
+                            : `Interest withdrawn.`
                         );
                       }}
                       className={`w-full py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs ${
@@ -539,32 +537,12 @@ export const ProjectCollaboratorList: React.FC<ProjectCollaboratorListProps> = (
                       }`}
                     >
                       <UserCheck className="w-3.5 h-3.5" />
-                      <span>{hasCandidateExpressed ? 'Proposal Accepted' : 'Accept Proposal & Connect'}</span>
+                      <span>{hasCandidateExpressed ? 'Interest Sent' : 'Express Interest'}</span>
                     </button>
                   ) : (
-                    /* Third Party View: Switch Perspective Prompt */
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          onSelectActiveUser(project.authorId);
-                          onToggleInterested(match.id, true);
-                          triggerToast(`Switched to Owner (${authorProfile?.name.split(' ')[0]}) & sent proposal!`);
-                        }}
-                        className="flex-1 py-2 rounded-xl bg-[#1E2A38] text-white text-[11px] font-bold hover:bg-slate-800 transition cursor-pointer text-center"
-                      >
-                        Propose as Owner
-                      </button>
-                      <button
-                        onClick={() => {
-                          onSelectActiveUser(candidate.id);
-                          onToggleInterested(match.id, false);
-                          triggerToast(`Switched to Candidate (${candidate.name.split(' ')[0]}) & accepted proposal!`);
-                        }}
-                        className="flex-1 py-2 rounded-xl bg-slate-100 text-slate-800 text-[11px] font-bold hover:bg-slate-200 border border-slate-300 transition cursor-pointer text-center"
-                      >
-                        Accept as Candidate
-                      </button>
-                    </div>
+                    <p className="text-center text-xs text-slate-500">
+                      Sign in as the project owner or suggested collaborator to respond.
+                    </p>
                   )}
                 </div>
               </div>

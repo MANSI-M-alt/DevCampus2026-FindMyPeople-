@@ -4,7 +4,7 @@ import { Plus, X, Rocket, Users, FileText, CheckCircle, Sparkles } from 'lucide-
 
 interface PostProjectViewProps {
   currentUserId: string;
-  onProjectPosted: (newProject: Project) => void;
+  onProjectPosted: (newProject: Project) => Promise<void>;
   onTriggerMatch: () => void;
 }
 
@@ -19,6 +19,8 @@ export const PostProjectView: React.FC<PostProjectViewProps> = ({
   const [newRole, setNewRole] = useState('');
   const [goal, setGoal] = useState<Goal>('start a startup');
   const [postedSuccess, setPostedSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const goalOptions: { value: Goal; label: string; desc: string }[] = [
     { value: 'start a startup', label: 'Start a Startup', desc: 'Build a scalable commercial venture' },
@@ -40,9 +42,11 @@ export const PostProjectView: React.FC<PostProjectViewProps> = ({
     setRolesNeeded(rolesNeeded.filter((r) => r !== role));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !description.trim()) return;
+    setSubmitError(null);
+    setIsSubmitting(true);
 
     const project: Project = {
       id: `proj-${Date.now()}`,
@@ -54,8 +58,14 @@ export const PostProjectView: React.FC<PostProjectViewProps> = ({
       createdAt: new Date().toISOString(),
     };
 
-    onProjectPosted(project);
-    setPostedSuccess(true);
+    try {
+      await onProjectPosted(project);
+      setPostedSuccess(true);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Could not publish the project.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleQuickLoadSample = () => {
@@ -188,6 +198,7 @@ export const PostProjectView: React.FC<PostProjectViewProps> = ({
 
         {/* Submit */}
         <div className="pt-3 border-t border-dashed border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+          {submitError && <p role="alert" className="text-sm text-rose-700">{submitError}</p>}
           {postedSuccess ? (
             <div className="flex items-center gap-3 text-emerald-900 bg-emerald-50 border border-emerald-200 p-3 rounded-xl w-full justify-between font-mono text-xs font-bold">
               <span className="flex items-center gap-1.5">
@@ -204,9 +215,10 @@ export const PostProjectView: React.FC<PostProjectViewProps> = ({
           ) : (
             <button
               type="submit"
-              className="w-full sm:w-auto ml-auto px-6 py-2.5 rounded-xl bg-[#1E2A38] text-white font-mono text-xs font-bold transition hover:bg-slate-800 cursor-pointer shadow-xs"
+              disabled={isSubmitting}
+              className="w-full sm:w-auto ml-auto px-6 py-2.5 rounded-xl bg-[#1E2A38] text-white font-mono text-xs font-bold transition hover:bg-slate-800 cursor-pointer shadow-xs disabled:opacity-60"
             >
-              PUBLISH PROJECT & MATCH
+              {isSubmitting ? 'PUBLISHING…' : 'PUBLISH PROJECT & MATCH'}
             </button>
           )}
         </div>

@@ -26,6 +26,7 @@ This project is designed for interdisciplinary collaboration discovery in a stud
 
 - React + TypeScript + Vite
 - Express + TypeScript
+- Supabase Auth + PostgreSQL (with row-level security)
 - Tailwind CSS
 - Google Gemini API via `@google/genai`
 - Node.js
@@ -43,6 +44,7 @@ This project is designed for interdisciplinary collaboration discovery in a stud
 ├── public/
 ├── server.ts
 ├── src/
+├── supabase/
 ├── tsconfig.json
 ├── vite.config.ts
 └── README.md
@@ -56,20 +58,28 @@ This project is designed for interdisciplinary collaboration discovery in a stud
 npm install
 ```
 
-### 2. Configure environment
+### 2. Configure Supabase and environment
 
-Copy the example environment file and add your Gemini API key:
+Create a Supabase project, then run [`supabase/schema.sql`](./supabase/schema.sql) in the Supabase SQL Editor. It creates the profile, project, and match tables, signup profile trigger, and row-level security policies.
+
+Copy the example environment file and set the project URL and publishable key from **Project Settings → API**:
 
 ```bash
-cp .env.example .env
+Copy-Item .env.example .env
 ```
 
-Then update `.env`:
+Set these values in `.env`:
 
 ```env
-GEMINI_API_KEY=your_api_key_here
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your_supabase_publishable_key
+GEMINI_API_KEY=your_gemini_api_key_here
 PORT=3000
 ```
+
+The app uses Supabase email/password authentication. Configure email confirmation and the allowed redirect URLs in **Authentication → URL Configuration** in Supabase. The client-side publishable key is expected to be visible in the browser; never put a `service_role` or secret key in `VITE_*` variables.
+
+If you previously placed a real API key in `.env.example`, rotate that key and keep its replacement only in the ignored local `.env` file.
 
 ### 3. Run the app in development mode
 
@@ -104,8 +114,9 @@ The Express server exposes AI-assisted endpoints for the app:
 
 ## Notes
 
-- If `GEMINI_API_KEY` is not configured, the app falls back to demo/default data rather than failing outright.
-- The app is optimized for hackathon/demo usage and includes seeded profile and project data.
+- Profiles, projects, and collaborator-match interest are stored in Supabase.
+- Profile email addresses are kept in Supabase Auth and only exposed to participants after both sides express interest.
+- `GEMINI_API_KEY` is optional for local startup; AI endpoints use their default responses when it is absent.
 
 ## License
 
