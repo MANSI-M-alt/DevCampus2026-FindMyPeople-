@@ -81,6 +81,12 @@ The app uses Supabase email/password authentication. Configure email confirmatio
 
 If you previously placed a real API key in `.env.example`, rotate that key and keep its replacement only in the ignored local `.env` file.
 
+### Deploy to Netlify
+
+The repository includes [`netlify.toml`](./netlify.toml), which configures `npm run build`, publishes `dist`, enables the SPA fallback, and excludes the public Supabase config and non-secret `PORT` setting from Netlify's secret-value scan. In Netlify, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` under **Site configuration → Environment variables**, then trigger a new deploy. These values must be present at build time. Do not set `PORT` in Netlify; this is a static frontend deployment and does not use the Express server port. If Supabase variables are missing, the deployed page displays a configuration message instead of a blank screen.
+
+The Express Gemini endpoints in `server.ts` are not deployed by this static-site configuration. Host the Express server separately and configure a Netlify proxy or migrate those endpoints to Netlify Functions if the AI features are needed on the deployed site.
+
 ### 3. Run the app in development mode
 
 ```bash

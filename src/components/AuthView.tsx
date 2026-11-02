@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
-export const AuthView: React.FC = () => {
+interface AuthViewProps {
+  supabase: SupabaseClient;
+}
+
+export const AuthView: React.FC<AuthViewProps> = ({ supabase }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

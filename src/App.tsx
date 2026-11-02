@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { Session } from '@supabase/supabase-js';
+import type { Session, SupabaseClient } from '@supabase/supabase-js';
 import { MatchResult, Project, SparkSessionData, StudentProfile } from './types';
 import { HeaderNav, NavTab } from './components/HeaderNav';
 import { ProjectCollaboratorList } from './components/ProjectCollaboratorList';
@@ -8,8 +8,11 @@ import { PostProjectView } from './components/PostProjectView';
 import { SparkSessionView } from './components/SparkSessionView';
 import { PhdScholarsView } from './components/PhdScholarsView';
 import { AuthView } from './components/AuthView';
-import { supabase } from './lib/supabase';
 import { Plus } from 'lucide-react';
+
+interface AppProps {
+  supabase: SupabaseClient;
+}
 
 interface ProfileRow {
   id: string;
@@ -107,7 +110,7 @@ const getSupabaseErrorMessage = (error: unknown, fallback: string): string => {
   return fallback;
 };
 
-export default function App() {
+export default function App({ supabase }: AppProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
@@ -452,7 +455,7 @@ export default function App() {
   if (!isAuthReady) {
     return <main className="min-h-screen grid place-items-center text-slate-600">Connecting to Supabase…</main>;
   }
-  if (!session) return <AuthView />;
+  if (!session) return <AuthView supabase={supabase} />;
 
   if (isLoadingData || !activeProfile) {
     return (
