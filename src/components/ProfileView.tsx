@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { StudentProfile, Goal, PreviousProject } from '../types';
 import { DAYS_OF_WEEK, TIMES_OF_DAY } from '../seedData';
+import { fetchAuthenticatedApi } from '../lib/api';
+import { readApiResponse } from '../lib/readApiResponse';
 import { Check, Plus, X, User, Calendar, Sparkles, FolderGit2, ExternalLink, Trash2, GraduationCap, Award } from 'lucide-react';
 
 interface ProfileViewProps {
   currentProfile: StudentProfile;
   onSaveProfile: (updated: StudentProfile) => Promise<void>;
+  supabase: SupabaseClient;
 }
 
-export const ProfileView: React.FC<ProfileViewProps> = ({ currentProfile, onSaveProfile }) => {
+export const ProfileView: React.FC<ProfileViewProps> = ({ currentProfile, onSaveProfile, supabase }) => {
   const [bioInput, setBioInput] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractError, setExtractError] = useState<string | null>(null);
@@ -41,29 +45,31 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ currentProfile, onSave
     setExtractError(null);
 
     try {
-      const response = await fetch('/api/profile/extract', {
+      const response = await fetchAuthenticatedApi(supabase, '/api/profile/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ bioText: bioInput }),
       });
 
-      const data = await response.json();
+      const data = await readApiResponse<{
+        error?: string;
+        profile?: Partial<StudentProfile>;
+      }>(response);
       if (!response.ok) {
         throw new Error(data.error || 'Failed to extract profile.');
       }
 
-      if (data.profile) {
-        setFormData((prev) => ({
-          ...prev,
-          name: data.profile.name || prev.name,
-          department: data.profile.department || prev.department,
-          year: data.profile.year || prev.year,
-          skills: data.profile.skills || prev.skills,
-          interests: data.profile.interests || prev.interests,
-          goal: (data.profile.goal as Goal) || prev.goal,
-          bio: bioInput,
-        }));
-      }
+      if (!data.profile) throw new Error('The AI response did not contain a profile.');
+      setFormData((prev) => ({
+        ...prev,
+        name: data.profile?.name || prev.name,
+        department: data.profile?.department || prev.department,
+        year: data.profile?.year || prev.year,
+        skills: data.profile?.skills || prev.skills,
+        interests: data.profile?.interests || prev.interests,
+        goal: data.profile?.goal || prev.goal,
+        bio: bioInput,
+      }));
     } catch (err: any) {
       console.error(err);
       setExtractError(err.message || 'An error occurred during extraction.');

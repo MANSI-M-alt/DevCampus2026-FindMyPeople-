@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { StudentProfile, Project } from '../types';
 import { Sparkles, Search, Filter, BookOpen, GraduationCap, ExternalLink, Plus, Send, CheckCircle2, ArrowRight, X } from 'lucide-react';
+import { fetchAuthenticatedApi } from '../lib/api';
+import { readApiResponse } from '../lib/readApiResponse';
 
 interface PhdScholarsViewProps {
   profiles: StudentProfile[];
   activeUserId: string;
   onPostResearchRequirement: (newProject: Project) => Promise<void>;
+  supabase: SupabaseClient;
 }
 
 export const PhdScholarsView: React.FC<PhdScholarsViewProps> = ({
   profiles,
   activeUserId,
   onPostResearchRequirement,
+  supabase,
 }) => {
   const activeUser = profiles.find((p) => p.id === activeUserId) || profiles[0];
 
@@ -82,7 +87,7 @@ export const PhdScholarsView: React.FC<PhdScholarsViewProps> = ({
     setAiMatches(null);
 
     try {
-      const response = await fetch('/api/match', {
+      const response = await fetchAuthenticatedApi(supabase, '/api/match', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -98,7 +103,17 @@ export const PhdScholarsView: React.FC<PhdScholarsViewProps> = ({
         }),
       });
 
-      const data = await response.json();
+      const data = await readApiResponse<{
+        error?: string;
+        matches?: Array<{
+          profileId: string;
+          matchScore?: number;
+          reason?: string;
+        }>;
+      }>(response);
+      if (!response.ok) {
+        throw new Error(data.error || 'Could not match this research requirement.');
+      }
       if (data.matches && Array.isArray(data.matches)) {
         setAiMatches(
           data.matches.map((m: any) => ({

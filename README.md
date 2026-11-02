@@ -83,9 +83,11 @@ If you previously placed a real API key in `.env.example`, rotate that key and k
 
 ### Deploy to Netlify
 
-The repository includes [`netlify.toml`](./netlify.toml), which configures `npm run build`, publishes `dist`, enables the SPA fallback, and excludes the public Supabase config and non-secret `PORT` setting from Netlify's secret-value scan. In Netlify, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` under **Site configuration → Environment variables**, then trigger a new deploy. These values must be present at build time. Do not set `PORT` in Netlify; this is a static frontend deployment and does not use the Express server port. If Supabase variables are missing, the deployed page displays a configuration message instead of a blank screen.
+The repository includes [`netlify.toml`](./netlify.toml), which configures `npm run build`, publishes `dist`, enables the SPA fallback, and excludes the public Supabase config and non-secret `PORT` setting from Netlify's secret-value scan. The Netlify Function declares the `/api/...` routes directly. In Netlify, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` under **Site configuration → Environment variables**, then trigger a new deploy. These values must be present at build time. Do not set `PORT` in Netlify; this is a static frontend deployment and does not use the Express server port. If Supabase variables are missing, the deployed page displays a configuration message instead of a blank screen.
 
-The Express Gemini endpoints in `server.ts` are not deployed by this static-site configuration. Host the Express server separately and configure a Netlify proxy or migrate those endpoints to Netlify Functions if the AI features are needed on the deployed site.
+Gemini requests run in the Netlify Function under `netlify/functions`; the API key is read from the server-side `GEMINI_API_KEY` environment variable and is never embedded in the frontend. Add `GEMINI_API_KEY` under **Site configuration → Environment variables**, with the **Functions** scope enabled, and redeploy. Do not prefix it with `VITE_` and do not add it to `SECRETS_SCAN_OMIT_KEYS`. Ensure the Supabase URL and publishable key are available to both **Builds** and **Functions** so the function can validate signed-in users. The same Gemini key can be kept in the ignored local `.env` for development.
+
+The local Express server exposes the same AI handlers from `server.ts`.
 
 ### 3. Run the app in development mode
 

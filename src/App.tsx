@@ -9,6 +9,8 @@ import { SparkSessionView } from './components/SparkSessionView';
 import { PhdScholarsView } from './components/PhdScholarsView';
 import { AuthView } from './components/AuthView';
 import { Plus } from 'lucide-react';
+import { fetchAuthenticatedApi } from './lib/api';
+import { readApiResponse } from './lib/readApiResponse';
 
 interface AppProps {
   supabase: SupabaseClient;
@@ -233,12 +235,23 @@ export default function App({ supabase }: AppProps) {
     setMatchError(null);
     try {
       const candidates = profiles.filter((profile) => profile.id !== session.user.id);
-      const response = await fetch('/api/match', {
+      const response = await fetchAuthenticatedApi(supabase, '/api/match', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project, profiles: candidates }),
       });
-      const result = await response.json();
+      const result = await readApiResponse<{
+        error?: string;
+        matches?: Array<{
+          profileId: string;
+          matchScore: number;
+          reason: string;
+          complementarySkill: string;
+          goalAlignment: MatchResult['goalAlignment'];
+          goalAlignmentNote: string;
+          risk: string;
+        }>;
+      }>(response);
       if (!response.ok) throw new Error(result.error || 'Failed to generate matches.');
 
       const generatedMatches = Array.isArray(result.matches) ? result.matches as Array<{
@@ -427,12 +440,15 @@ export default function App({ supabase }: AppProps) {
         })));
       }
 
-      const response = await fetch('/api/spark-session', {
+      const response = await fetchAuthenticatedApi(supabase, '/api/spark-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project: currentProject, authorProfile: author, candidateProfile: candidate }),
       });
-      const result = await response.json();
+      const result = await readApiResponse<{
+        error?: string;
+        sparkKit?: Omit<SparkSessionData, 'matchId'>;
+      }>(response);
       if (!response.ok) throw new Error(result.error || 'Could not generate a Spark Session.');
       if (result.sparkKit) {
         setSparkSessions((previous) => ({
@@ -600,12 +616,17 @@ export default function App({ supabase }: AppProps) {
             profiles={profiles}
             activeUserId={session.user.id}
             onPostResearchRequirement={handleProjectPosted}
+            supabase={supabase}
           />
         )}
 
         {activeTab === 'profile' && (
           <div className="mx-auto max-w-6xl">
-            <ProfileView currentProfile={activeProfile} onSaveProfile={handleSaveProfile} />
+            <ProfileView
+              currentProfile={activeProfile}
+              onSaveProfile={handleSaveProfile}
+              supabase={supabase}
+            />
           </div>
         )}
 
